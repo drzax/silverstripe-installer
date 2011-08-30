@@ -1,0 +1,6 @@
+[submodule "sapphire"]
+	path = sapphire
+	url = git@github.com:drzax/sapphire.git
+[submodule "cms"]
+	path = cms
+	url = git@github.com:drzax/silverstripe-cms.git
