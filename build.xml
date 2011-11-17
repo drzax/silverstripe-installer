@@ -21,7 +21,9 @@ phing help
 	<property name="changelog-definitions-file" value="changelog-definitions" override="true" />
 	<property name="ni_build" value="false" override="true"/>   <!-- Prompt if local changes would be overwritten by update -->
 	<property name="changelogSort" value="type" override="true"/>
-	
+
+	<property name="archivedest" value="${basedir}/../" />
+
 	<available file="${dependent-modules-file}" property="dependent-modules-file-exists" />
 	<available file="${changelog-definition-file}" property="changelog-definition-file-exists" />
 
@@ -56,6 +58,7 @@ Options:
 
 -Darchivetype (the type of archive to use zip or tar.giz)
 -Darchivename (the name of the created archive file)
+-Darchivedest (the destination directory to put the archive)
 
 -Dtagname (the name of the tag/branch to check out or to create as a new tag)
 -DincludeBaseDir (whether or not to include the base dir in a git checkout operation)
@@ -114,23 +117,42 @@ Options:
 		<copy todir="${tmp}/${archivename}">
 			<fileset dir="${basedir}">
 				<include name="**/**" />
+				<exclude name="assets/**" />
 				<exclude name="mysite/local.conf.php" />
 				<exclude name="mysite/db.conf.php" />
-				<exclude name="mysite/*.log" />
+				<exclude name="**/*.log" />
 				<exclude name="**/.svn/**" />
 				<exclude name="**/.git/**" />
 				<exclude name="**/.project" />  <!-- remove eclipse configuration file -->
 				<exclude name="**/.buildpath" />
 				<exclude name="**/.settings" />
 				<exclude name="**/.idea/**" />  <!-- remove phpstorm configuration file -->
+				<exclude name="tools/**" />
+				<exclude name="**/tests/**" />
+				<exclude name="cms/docs/**" />
+				<exclude name="sapphire/docs/**" />
+				<exclude name="build.xml" />
+				<exclude name="dependent-modules*" />
+				<exclude name="changelog-definitions*" />
+				<exclude name="_ss_environment.php" />
+			</fileset>
+			<fileset dir="${basedir}">
+				<include name="assets/Uploads" />
+				<include name="assets/.htaccess" />
+				<include name="assets/web.config" />
 			</fileset>
 		</copy>
-		
+
+		<!-- TODO Remove once we figured out how to nest git repositories for themes -->
+		<move file="${tmp}/${archivename}/themes/blackcandy/blackcandy_blog" todir="${tmp}/${archivename}/themes" haltonerror='false' />
+		<move file="${tmp}/${archivename}/themes/blackcandy/blackcandy_calendar" todir="${tmp}/${archivename}/themes" haltonerror='false' />
+		<move file="${tmp}/${archivename}/themes/blackcandy/blackcandy" todir="${tmp}/${archivename}/themes" haltonerror='false' />
+
 		<!-- create tar archive -->
 		<if>
 			<equals arg1="${archivetype}" arg2="tar.gz" casesensitive="false" trim="true"/>
 			<then>
-				<tar destfile="${basedir}/${archivefilename}" compression="gzip">
+				<tar destfile="${archivedest}/${archivefilename}" compression="gzip">
 					<fileset dir="${tmp}">
 						<include name="**/**" />
 					</fileset>
@@ -142,7 +164,7 @@ Options:
 		<if>
 			<equals arg1="${archivetype}" arg2="zip" casesensitive="false" trim="true"/>
 			<then>
-				<zip destfile="${basedir}/${archivefilename}">
+				<zip destfile="${archivedest}/${archivefilename}">
 					<fileset dir="${tmp}">
 						<include name="**/**" />
 					</fileset>
@@ -247,15 +269,15 @@ Options:
 				<echo msg="Creating '${archivename}' archive"/>
 			</then>
 			<else>
-				<input propertyName="archivename" defaultValue="archive" promptChar=":">Please enter a name for the archive (without extension)</input>
-				<property name="archivefilename" value="${archivename}.${archivetype}" />
+				<input propertyName="archivename" defaultValue="SilverStripe-vX.Y.Z" promptChar=":">Please enter a name for the archive (without extension)</input>
 				<echo msg="Creating '${archivename}' archive"/>
 			</else>
 		</if>
 
+		<property name="archivefilename" value="${archivename}.${archivetype}" />
+
 		<phingCall target="archiveTask" />
 		<echo msg="Created archive in: ${basedir}/${archivename}" />
-
 	</target>
 
 	<!-- Load modules where sensitive dependency exists -->
